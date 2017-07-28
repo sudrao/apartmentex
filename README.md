@@ -28,26 +28,15 @@ See an example app at https://github.com/Dania02525/widget_saas
 config :apartmentex, schema_prefix: "prefix_" # the default prefix is "tenant_"
 ```
 
-- If you want to use `mix apartmentex.migrate` below, you also need to define a schema iterator
-module and configure it like this:
+- If you want to use `mix apartmentex.migrate` below, you also need a schema iterator config like this:
 ```elixir
-config :apartmentex, schema_iterator: MySchemaIterator
+config :apartmentex, :schema_iterator,
+  repo: MyApp.Repo,
+  app_start_needed: true,
+  list: quote(do: MyApp.Repo.all(MyApp.Tenant) |> Enum.map(fn x -> x.schema_name end))
 ```
-The iterator will look something like this:
-```elixir
-defmodule MySchemaIterator do
-  @behaviour Apartmentex.TenantIterator
-
-  def iterate(callback) do
-    # Start my app. Needed to run migrations.
-    {:ok, _} = Application.ensure_all_started(:my_app)
-    # Some code here to get list of schema names into schema_list
-    # e.g. schema_list = MyApp.Repo.all(...)
-    # Finally, send each schema name back.
-    Enum.each(schema_list, fn tenant -> callback.(MyApp.Repo, tenant) end)
-  end
-end
-```
+The :list parameter can be either a list of tenant names or a quoted expression like the one shown.
+Your application will be started before evaluating the quoted content if app_start_needed is true.
 
 ### Use
 
@@ -93,7 +82,7 @@ As a convenience, if you need to update all tenant schemas based on new migratio
 ```
 mix apartmentex.migrate
 ```
-Note: this requires the iterator and config mentioned above.
+Note: this requires the schema_iterator config mentioned above.
 
 
 ```elixir

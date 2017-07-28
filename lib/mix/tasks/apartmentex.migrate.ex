@@ -9,12 +9,19 @@ defmodule Mix.Tasks.Apartmentex.Migrate do
     else
       # Add client app's load path
       Mix.Project.load_paths |> Enum.at(0) |> Code.prepend_path
-      # Load client app
-      {:ok, _} = Application.ensure_all_started(Mix.Project.config()[:app])
+      # Load client app if requested
+      if iterator[:app_start_needed] do
+        {:ok, _} = Application.ensure_all_started(Mix.Project.config()[:app])
+      end
       # Get list of tenants
-      quoted_list = iterator[:list]
-      result = Code.eval_quoted(quoted_list, [], file: __ENV__.file, line: __ENV__.line)
-      list = result |> elem(0)
+      list =
+      case iterator[:list] do
+        list when is_list(list) -> list
+        quoted_content when is_tuple(quoted_content) ->
+          Code.eval_quoted(quoted_content, [], file: __ENV__.file, line: __ENV__.line)
+          |> elem(0)
+        other -> raise "schema_iterator[:list] should be a list or quoted content. Instead got: " <> inspect(other)
+      end
       # Get repo and migrate each tenant in list
       repo = iterator[:repo]
       list |> Enum.each(fn tenant -> migrate_one(repo, tenant) end)
