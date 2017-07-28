@@ -12,10 +12,11 @@ defmodule Mix.Tasks.Apartmentex.Migrate do
       # Load client app
       {:ok, _} = Application.ensure_all_started(Mix.Project.config()[:app])
       # Get list of tenants
-      quoted_list = iterator.list
+      quoted_list = iterator[:list]
       result = Code.eval_quoted(quoted_list, [], file: __ENV__.file, line: __ENV__.line)
       list = result |> elem(0)
-      repo = iterator.repo
+      # Get repo and migrate each tenant in list
+      repo = iterator[:repo]
       list |> Enum.each(fn tenant -> migrate_one(repo, tenant) end)
     end
   end
