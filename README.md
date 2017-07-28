@@ -28,6 +28,27 @@ See an example app at https://github.com/Dania02525/widget_saas
 config :apartmentex, schema_prefix: "prefix_" # the default prefix is "tenant_"
 ```
 
+- If you want to use `mix apartmentex.migrate` below, you also need to define a schema iterator
+module and configure it like this:
+```elixir
+config :apartmentex, schema_iterator: MySchemaIterator
+```
+The iterator will look something like this:
+```elixir
+defmodule MySchemaIterator do
+  @behaviour Apartmentex.TenantIterator
+
+  def iterate(callback) do
+    # Start my app. Needed to run migrations.
+    {:ok, _} = Application.ensure_all_started(:my_app)
+    # Some code here to get list of schema names into schema_list
+    # e.g. schema_list = MyApp.Repo.all(...)
+    # Finally, send each schema name back.
+    Enum.each(schema_list, fn tenant -> callback.(MyApp.Repo, tenant) end)
+  end
+end
+```
+
 ### Use
 
 Generate a migration file that will be run against each tenant:
@@ -67,6 +88,13 @@ When you need to update a tenant's schema based on new migrations, you can run:
 If there is a problem with a migration, you can roll it back by passing in the
 version (as an integer). This will revert every migration back until the version
 specified (including that version):
+
+As a convenience, if you need to update all tenant schemas based on new migrations, you can run:
+```
+mix apartmentex.migrate
+```
+Note: this requires the iterator and config mentioned above.
+
 
 ```elixir
 # Returns a tuple that is either:
