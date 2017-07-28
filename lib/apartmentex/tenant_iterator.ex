@@ -1,3 +1,4 @@
 defmodule Apartmentex.TenantIterator do
-  @callback iterate((:atom, binary() -> any())) :: any()
+  @callback list(none()) :: list(binary())
+  @callback repo(none()) :: atom()
 end

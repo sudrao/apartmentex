@@ -9,9 +9,12 @@ defmodule Mix.Tasks.Apartmentex.Migrate do
     else
       # Add client app's load path
       Mix.Project.load_paths |> Enum.at(0) |> Code.prepend_path
+      # Load client app
+      {:ok, _} = Application.ensure_all_started(Mix.Project.config()[:app])
       # Load module and iterate over tenants
       with {:module, _} <- Code.ensure_loaded(iterator) do
-        iterator.iterate(&migrate_one/2)
+        repo = iterator.repo
+        iterator.list |> Enum.each(fn tenant -> migrate_one(repo, tenant) end)
       else
         {:error, reason} -> Mix.shell.error(inspect(reason))
       end
